@@ -146,7 +146,9 @@
                                             <span class="label-icon">🎙</span>
                                             语音选择
                                         </label>
-                                        <select id="voiceSelect" class="cyber-select"></select>
+                                        <div class="select-wrapper">
+                                            <select id="voiceSelect" class="cyber-select"></select>
+                                        </div>
                                     </div>
                                     <div class="params-grid">
                                         <div class="param-group">
@@ -157,7 +159,6 @@
                                             </label>
                                             <div class="slider-container">
                                                 <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
-                                                <div class="slider-track"></div>
                                             </div>
                                         </div>
                                         <div class="param-group">
@@ -168,7 +169,6 @@
                                             </label>
                                             <div class="slider-container">
                                                 <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
-                                                <div class="slider-track"></div>
                                             </div>
                                         </div>
                                         <div class="param-group">
@@ -178,22 +178,23 @@
                                                 <span class="param-value">50</span>
                                             </label>
                                             <div class="slider-container">
-                                                <input type="range" id="emotion" min="0" max="100" step="10" value="50">
-                                                <div class="slider-track"></div>
+                                                <input type="range" id="emotion" min="0" max="100" step="1" value="50">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <button id="generateBtn" class="cyber-button">
-                                <span class="button-content">
-                                    <span class="button-icon">🤖</span>
-                                    生成暖心内容
-                                </span>
-                                <span class="button-glitch"></span>
-                                <span class="button-scanner"></span>
-                            </button>
+                            <div class="generate-button-container">
+                                <button id="generateBtn" class="cyber-button">
+                                    <span class="button-content">
+                                        <span class="button-icon">🤖</span>
+                                        生成暖心内容
+                                    </span>
+                                    <span class="button-glitch"></span>
+                                    <span class="button-scanner"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 

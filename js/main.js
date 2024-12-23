@@ -191,10 +191,18 @@ class PodcastApp {
         this.voices = [];
         
         // 等待声音加载
-        speechSynthesis.addEventListener('voiceschanged', () => {
-            this.voices = this.synth.getVoices().filter(voice => voice.lang.startsWith('zh'));
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                this.voices = this.synth.getVoices();
+                this.updateVoiceList();
+            };
+        }
+        
+        // 立即尝试加载一次声音列表
+        setTimeout(() => {
+            this.voices = this.synth.getVoices();
             this.updateVoiceList();
-        });
+        }, 100);
         
         // 添加语音参数控制事件监听
         this.initVoiceControls();
@@ -344,12 +352,60 @@ class PodcastApp {
     initVoiceControls() {
         // 更新参数显示值
         const updateParamValue = (control) => {
-            const valueSpan = control.parentElement.querySelector('.param-value');
-            valueSpan.textContent = control.value;
+            const valueSpan = control.parentElement.parentElement.querySelector('.param-value');
+            const value = parseFloat(control.value);
+            
+            // 根据不同参数类型显示不同格式
+            if (control.id === 'emotion') {
+                valueSpan.textContent = `${value}`;
+            } else {
+                valueSpan.textContent = value.toFixed(1);
+            }
+            
+            // 添加更新动画效果
+            valueSpan.classList.add('updating');
+            setTimeout(() => valueSpan.classList.remove('updating'), 200);
+            
+            // 更新滑块轨道
+            const sliderTrack = control.parentElement.querySelector('.slider-track');
+            if (sliderTrack) {
+                const percentage = ((value - control.min) / (control.max - control.min)) * 100;
+                sliderTrack.style.width = `${percentage}%`;
+            }
         };
         
+        // 为每个滑块添加事件监听
         [this.speedControl, this.pitchControl, this.emotionControl].forEach(control => {
-            control.addEventListener('input', () => updateParamValue(control));
+            // 创建滑块轨道元素
+            const sliderContainer = control.parentElement;
+            if (!sliderContainer.querySelector('.slider-track')) {
+                const sliderTrack = document.createElement('div');
+                sliderTrack.className = 'slider-track';
+                sliderContainer.appendChild(sliderTrack);
+            }
+            
+            // 初始化滑块值和轨道
+            updateParamValue(control);
+            
+            // 添加事件监听
+            ['input', 'change'].forEach(eventType => {
+                control.addEventListener(eventType, () => {
+                    requestAnimationFrame(() => updateParamValue(control));
+                });
+            });
+            
+            // 添加触摸事件支持
+            if ('ontouchstart' in window) {
+                control.addEventListener('touchstart', () => {
+                    const valueSpan = control.parentElement.parentElement.querySelector('.param-value');
+                    valueSpan.classList.add('updating');
+                });
+                
+                control.addEventListener('touchend', () => {
+                    const valueSpan = control.parentElement.parentElement.querySelector('.param-value');
+                    valueSpan.classList.remove('updating');
+                });
+            }
         });
     }
     
@@ -357,20 +413,49 @@ class PodcastApp {
         // 清空现有选项
         this.voiceSelect.innerHTML = '';
         
+        // 添加默认选项
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '选择语音';
+        this.voiceSelect.appendChild(defaultOption);
+        
         // 添加可用的中文语音
         this.voices.forEach(voice => {
-            const option = document.createElement('option');
-            option.value = voice.name;
-            option.textContent = `${voice.name} (${voice.lang})`;
-            this.voiceSelect.appendChild(option);
+            if (voice.lang.includes('zh')) {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                // 简化显示名称，只显示语音名称
+                option.textContent = voice.name.replace(/Microsoft |Google |Chinese/, '');
+                this.voiceSelect.appendChild(option);
+            }
         });
         
         // 如果没有中文语音，添加提示
-        if (this.voices.length === 0) {
+        if (this.voices.length === 0 || this.voiceSelect.options.length === 1) {
             const option = document.createElement('option');
             option.value = '';
             option.textContent = '未检测到中文语音';
             this.voiceSelect.appendChild(option);
+            this.voiceSelect.disabled = true;
+        } else {
+            this.voiceSelect.disabled = false;
+            // 默认选择第一个可用的语音
+            if (this.voiceSelect.options.length > 1) {
+                this.voiceSelect.selectedIndex = 1;
+            }
+        }
+        
+        // 添加移动端的触摸事件处理
+        if ('ontouchstart' in window) {
+            this.voiceSelect.addEventListener('touchstart', function(e) {
+                // 确保下拉列表在视图中可见
+                if (this.offsetTop + this.offsetHeight + 200 > window.innerHeight) {
+                    window.scrollTo({
+                        top: this.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
+                }
+            });
         }
     }
     
